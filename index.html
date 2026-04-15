@@ -92,8 +92,13 @@
                 </a-camera>
 
                 <!-- VR Tracked Controllers -->
-                <a-entity laser-controls="hand: left" raycaster="objects: .clickable; showLine: true; far: 20"></a-entity>
-                <a-entity id="right-controller" laser-controls="hand: right" raycaster="objects: .clickable; showLine: true; far: 20">
+                <a-entity laser-controls="hand: left"
+                          cursor="rayOrigin: entity"
+                          raycaster="objects: .clickable; showLine: true; far: 20"></a-entity>
+                <a-entity id="right-controller"
+                          laser-controls="hand: right"
+                          cursor="rayOrigin: entity"
+                          raycaster="objects: .clickable; showLine: true; far: 20">
                     <!-- Flashlight Body (cosmetic) — negative Z = forward/away from user -->
                     <a-cylinder radius="0.025" height="0.2" color="#222" position="0 0 -0.08" rotation="90 0 0"
                                 material="metalness: 0.8; roughness: 0.3; color: #333; shader: standard"></a-cylinder>
