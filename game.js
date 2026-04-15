@@ -370,9 +370,21 @@ function showIntelModalVR(message, value) {
 
 let currentInput = [];
 
+function shuffleArray(items) {
+    const shuffled = [...items];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    return shuffled;
+}
+
 function openCodeModalVR() {
     destroyActiveModalVR();
     const sceneData = SCENES[GameState.currentSceneId];
+    const availableDigits = shuffleArray(sceneData.fragments);
     
     if (!currentInput.length || currentInput.length !== sceneData.finalCode.length) {
         currentInput = new Array(sceneData.finalCode.length).fill("");
@@ -414,12 +426,12 @@ function openCodeModalVR() {
     feedbackMsg.setAttribute('position', '0 0.25 0.05');
     modal.appendChild(feedbackMsg);
 
-    // Number buttons — large clickable boxes with the digit displayed
-    const fragmentsNum = sceneData.fragments.length;
+    // Number buttons — show the found digits, but in a shuffled order
+    const fragmentsNum = availableDigits.length;
     const spacing = 0.55;
     const startX = -((fragmentsNum - 1) * spacing) / 2;
     
-    sceneData.fragments.forEach((frag, idx) => {
+    availableDigits.forEach((frag, idx) => {
         const x = startX + idx * spacing;
         
         const btn = document.createElement('a-entity');
@@ -514,6 +526,8 @@ function submitCodeVR(sceneData) {
     const finalCode = sceneData.finalCode;
     let isComplete = true;
     let isCorrect = true;
+    const codeDisplay = document.getElementById('vr-code-display');
+    const feedback = document.getElementById('vr-code-feedback');
 
     const newInput = currentInput.map((char, index) => {
         if (char === "") {
@@ -529,21 +543,15 @@ function submitCodeVR(sceneData) {
     });
 
     currentInput = newInput;
-    document.getElementById('vr-code-display').setAttribute('value', currentInput.map(c => c || "_").join(" "));
+    codeDisplay.setAttribute('text', 'value', currentInput.map(c => c || "_").join("  "));
 
     if (isComplete && isCorrect) {
-        // Success
-        document.getElementById("vr-code-feedback").setAttribute('value', 'ACCESS GRANTED');
-        document.getElementById("vr-code-feedback").setAttribute('color', '#33ff33');
-        setTimeout(() => {
-            destroyActiveModalVR();
-            document.getElementById('hud-enter-code').classList.add('hidden-aframe');
-            document.getElementById('hud-enter-code').setAttribute('visible', 'false');
-            handleSceneSuccessVR(sceneData);
-        }, 1500);
+        feedback.setAttribute('text', 'value', 'ACCESS GRANTED');
+        feedback.setAttribute('text', 'color', '#33ff33');
+        showLevelCompleteModal(sceneData);
     } else {
-        // Fail
-        document.getElementById("vr-code-feedback").setAttribute('value', 'INCORRECT ENTRIES REMOVED');
+        feedback.setAttribute('text', 'value', isComplete ? 'INCORRECT ENTRIES REMOVED' : 'FILL ALL SLOTS');
+        feedback.setAttribute('text', 'color', '#ff3333');
     }
 }
 
@@ -555,6 +563,55 @@ function handleSceneSuccessVR(sceneData) {
     } else {
         transitionToScene(sceneData.nextScene);
     }
+}
+
+function showLevelCompleteModal(sceneData) {
+    setTimeout(() => {
+        destroyActiveModalVR();
+
+        const modal = document.createElement('a-entity');
+        modal.setAttribute('id', 'active-vr-modal');
+
+        const bg = document.createElement('a-entity');
+        bg.setAttribute('geometry', 'primitive: box; width: 3.2; height: 2.1; depth: 0.1');
+        bg.setAttribute('material', 'color: #000; opacity: 0.95; shader: flat');
+        bg.setAttribute('position', '0 0 -0.05');
+        modal.appendChild(bg);
+
+        const title = document.createElement('a-entity');
+        title.setAttribute('text', {value: 'LEVEL COMPLETE', color: '#33ff33', align: 'center', width: 4});
+        title.setAttribute('position', '0 0.65 0.05');
+        modal.appendChild(title);
+
+        const sceneName = document.createElement('a-entity');
+        sceneName.setAttribute('text', {value: `${sceneData.name} cleared`, color: '#cccccc', align: 'center', width: 4});
+        sceneName.setAttribute('position', '0 0.25 0.05');
+        modal.appendChild(sceneName);
+
+        const nextBtn = document.createElement('a-entity');
+        nextBtn.setAttribute('position', '0 -0.45 0.05');
+        nextBtn.setAttribute('geometry', 'primitive: box; width: 1.8; height: 0.4; depth: 0.05');
+        nextBtn.setAttribute('material', 'color: #33ff33; shader: flat');
+        nextBtn.setAttribute('class', 'clickable');
+
+        const nextText = document.createElement('a-entity');
+        nextText.setAttribute('text', {value: sceneData.nextScene === null ? 'FINISH' : 'NEXT LEVEL', color: '#000', align: 'center', zOffset: 0.01, width: 4});
+        nextBtn.appendChild(nextText);
+
+        nextBtn.addEventListener('mouseenter', () => nextBtn.setAttribute('scale', '1.05 1.05 1.05'));
+        nextBtn.addEventListener('mouseleave', () => nextBtn.setAttribute('scale', '1 1 1'));
+        nextBtn.addEventListener('mousedown', () => {
+            AudioManager.playClick();
+            destroyActiveModalVR();
+            document.getElementById('hud-enter-code').classList.add('hidden-aframe');
+            document.getElementById('hud-enter-code').setAttribute('visible', 'false');
+            currentInput = [];
+            handleSceneSuccessVR(sceneData);
+        });
+
+        modal.appendChild(nextBtn);
+        spawnInFrontOfCamera(modal, 2.2);
+    }, 600);
 }
 
 function showBranchModalVR() {
