@@ -7,6 +7,8 @@ const GameState = {
     lastTouch: null
 };
 
+let activeCodeSceneId = null;
+
 // --- AUDIO MANAGER ---
 const AudioManager = {
     ambient: new Audio("ambient_horror.mp3"),
@@ -49,6 +51,7 @@ window.addEventListener('load', () => {
     };
     hudCodeBtn.addEventListener("mousedown", openCodeEntry);
     hudCodeBtn.addEventListener("click", openCodeEntry);
+    window.addEventListener("keydown", onCodeModalKeydown);
     
     // START SEQUENCE
     runOpeningSequence();
@@ -287,6 +290,7 @@ function typeWriter(text, elementId, speed, callback) {
 function destroyActiveModalVR() {
     const existing = document.getElementById('active-vr-modal');
     if(existing) existing.parentNode.removeChild(existing);
+    activeCodeSceneId = null;
 }
 
 function spawnInFrontOfCamera(modalEl, targetDistance) {
@@ -400,6 +404,7 @@ function openCodeModalVR() {
     destroyActiveModalVR();
     const sceneData = SCENES[GameState.currentSceneId];
     const availableDigits = shuffleArray(sceneData.fragments);
+    activeCodeSceneId = sceneData.id;
     
     if (!currentInput.length || currentInput.length !== sceneData.finalCode.length) {
         currentInput = new Array(sceneData.finalCode.length).fill("");
@@ -423,7 +428,7 @@ function openCodeModalVR() {
 
     // Instruction
     const inst = document.createElement('a-entity');
-    inst.setAttribute('text', {value: 'Tap the digits below in the right order', color: '#888', align: 'center', width: 3.1});
+    inst.setAttribute('text', {value: 'Tap the digits below or use your keyboard', color: '#888', align: 'center', width: 3.1});
     inst.setAttribute('position', '0 0.88 0.05');
     modal.appendChild(inst);
 
@@ -462,14 +467,7 @@ function openCodeModalVR() {
         btn.appendChild(numText);
         
         // Click handler
-        const processInput = () => {
-            AudioManager.playClick();
-            const emptyIndex = currentInput.findIndex(val => val === "");
-            if (emptyIndex !== -1) {
-                currentInput[emptyIndex] = frag.value;
-                document.getElementById('vr-code-display').setAttribute('text', 'value', currentInput.map(c => c || "_").join("  "));
-            }
-        };
+        const processInput = () => appendCodeDigit(frag.value);
         btn.addEventListener('mousedown', processInput);
         btn.addEventListener('click', processInput);
         
@@ -512,12 +510,7 @@ function openCodeModalVR() {
     const clearText = document.createElement('a-entity');
     clearText.setAttribute('text', {value: 'CLEAR', color: '#000', align: 'center', zOffset: 0.01, width: 4});
     clearBtn.appendChild(clearText);
-    const tryClear = () => {
-        AudioManager.playClick();
-        currentInput = new Array(sceneData.finalCode.length).fill("");
-        document.getElementById('vr-code-display').setAttribute('text', 'value', currentInput.map(c => c || "_").join("  "));
-        document.getElementById('vr-code-feedback').setAttribute('text', 'value', '');
-    };
+    const tryClear = () => clearCodeInput(true);
     clearBtn.addEventListener('mousedown', tryClear);
     clearBtn.addEventListener('click', tryClear);
     modal.appendChild(clearBtn);
@@ -536,6 +529,84 @@ function openCodeModalVR() {
 
     // Spawn in front of user
     spawnInFrontOfCamera(modal, 3.6);
+}
+
+function updateCodeDisplay() {
+    const codeDisplay = document.getElementById('vr-code-display');
+    if (codeDisplay) {
+        codeDisplay.setAttribute('text', 'value', currentInput.map(c => c || "_").join("  "));
+    }
+}
+
+function clearCodeFeedback() {
+    const feedback = document.getElementById('vr-code-feedback');
+    if (feedback) {
+        feedback.setAttribute('text', 'value', '');
+    }
+}
+
+function appendCodeDigit(digit) {
+    AudioManager.playClick();
+    const emptyIndex = currentInput.findIndex(val => val === "");
+    if (emptyIndex !== -1) {
+        currentInput[emptyIndex] = digit;
+        updateCodeDisplay();
+        clearCodeFeedback();
+    }
+}
+
+function clearCodeInput(playAudio = false) {
+    if (!activeCodeSceneId) return;
+    if (playAudio) {
+        AudioManager.playClick();
+    }
+    const sceneData = SCENES[activeCodeSceneId];
+    currentInput = new Array(sceneData.finalCode.length).fill("");
+    updateCodeDisplay();
+    clearCodeFeedback();
+}
+
+function removeLastCodeDigit() {
+    if (!activeCodeSceneId) return;
+    AudioManager.playClick();
+    for (let i = currentInput.length - 1; i >= 0; i--) {
+        if (currentInput[i] !== "") {
+            currentInput[i] = "";
+            break;
+        }
+    }
+    updateCodeDisplay();
+    clearCodeFeedback();
+}
+
+function onCodeModalKeydown(event) {
+    if (!activeCodeSceneId) return;
+
+    const sceneData = SCENES[activeCodeSceneId];
+    const allowedDigits = new Set(sceneData.fragments.map(fragment => fragment.value));
+
+    if (allowedDigits.has(event.key)) {
+        event.preventDefault();
+        appendCodeDigit(event.key);
+        return;
+    }
+
+    if (event.key === "Backspace") {
+        event.preventDefault();
+        removeLastCodeDigit();
+        return;
+    }
+
+    if (event.key === "Escape") {
+        event.preventDefault();
+        clearCodeInput(true);
+        return;
+    }
+
+    if (event.key === "Enter") {
+        event.preventDefault();
+        submitCodeVR(sceneData);
+    }
 }
 
 function submitCodeVR(sceneData) {
