@@ -41,6 +41,14 @@ AudioManager.init();
 window.addEventListener('load', () => {
     // Button Listeners for 2D UI
     document.getElementById("venture-btn").addEventListener("click", onVentureClicked);
+    const hudCodeBtn = document.getElementById("hud-enter-code");
+    const openCodeEntry = () => {
+        if (!hudCodeBtn.classList.contains('hidden-aframe')) {
+            openCodeModalVR();
+        }
+    };
+    hudCodeBtn.addEventListener("mousedown", openCodeEntry);
+    hudCodeBtn.addEventListener("click", openCodeEntry);
     
     // START SEQUENCE
     runOpeningSequence();
@@ -207,8 +215,12 @@ function refreshVRScene(sceneData) {
     });
 
     // Reset code hud
-    document.getElementById('hud-enter-code').classList.add('hidden-aframe');
-    document.getElementById('hud-enter-code').setAttribute('visible', 'false');
+    const hudCodeBtn = document.getElementById('hud-enter-code');
+    const hudCodeLabel = document.getElementById('hud-enter-code-label');
+    hudCodeBtn.classList.add('hidden-aframe');
+    hudCodeBtn.setAttribute('visible', 'false');
+    hudCodeBtn.setAttribute('material', 'color', '#111');
+    hudCodeLabel.setAttribute('text', 'value', 'ENTER CODE');
 }
 
 function onFragmentFound(fragmentId, fragmentValue, element) {
@@ -243,16 +255,11 @@ function checkAllFragmentsFound() {
 
     if (found >= total) {
         const hudCodeBtn = document.getElementById("hud-enter-code");
+        const hudCodeLabel = document.getElementById("hud-enter-code-label");
         hudCodeBtn.classList.remove('hidden-aframe');
         hudCodeBtn.setAttribute('visible', 'true');
-        hudCodeBtn.setAttribute('color', '#33ff33');
-        hudCodeBtn.setAttribute('text', `value: ENTER CODE [ ]; color: #33ff33`);
-        
-        hudCodeBtn.addEventListener('mousedown', () => {
-            if(!hudCodeBtn.classList.contains('hidden-aframe')) {
-                openCodeModalVR();
-            }
-        });
+        hudCodeBtn.setAttribute('material', 'color', '#132813');
+        hudCodeLabel.setAttribute('text', 'value', 'ENTER CODE');
     }
 }
 
