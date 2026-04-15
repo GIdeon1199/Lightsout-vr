@@ -260,6 +260,12 @@ function checkAllFragmentsFound() {
         hudCodeBtn.setAttribute('visible', 'true');
         hudCodeBtn.setAttribute('material', 'color', '#132813');
         hudCodeLabel.setAttribute('text', 'value', 'ENTER CODE');
+
+        if (!document.getElementById('active-vr-modal')) {
+            setTimeout(() => {
+                openCodeModalVR();
+            }, 250);
+        }
     }
 }
 
@@ -402,54 +408,54 @@ function openCodeModalVR() {
     
     // Background
     const bg = document.createElement('a-entity');
-    bg.setAttribute('geometry', 'primitive: box; width: 3.5; height: 2.8; depth: 0.1');
+    bg.setAttribute('geometry', 'primitive: box; width: 4.1; height: 3.1; depth: 0.1');
     bg.setAttribute('material', 'color: #000; opacity: 0.95; shader: flat');
     bg.setAttribute('position', '0 0 -0.05');
     modal.appendChild(bg);
     
     // Title
     const title = document.createElement('a-entity');
-    title.setAttribute('text', {value: 'SECURITY OVERRIDE', color: '#ff0000', align: 'center', width: 5});
-    title.setAttribute('position', '0 1.1 0.05');
+    title.setAttribute('text', {value: 'SECURITY OVERRIDE', color: '#ff0000', align: 'center', width: 4.2});
+    title.setAttribute('position', '0 1.2 0.05');
     modal.appendChild(title);
 
     // Instruction
     const inst = document.createElement('a-entity');
-    inst.setAttribute('text', {value: 'Tap the numbers in the correct order', color: '#888', align: 'center', width: 3});
-    inst.setAttribute('position', '0 0.8 0.05');
+    inst.setAttribute('text', {value: 'Tap the digits below in the right order', color: '#888', align: 'center', width: 3.1});
+    inst.setAttribute('position', '0 0.88 0.05');
     modal.appendChild(inst);
 
     // Code display (shows _ _ _ as you fill in)
     const codeDisplay = document.createElement('a-entity');
     codeDisplay.setAttribute('id', 'vr-code-display');
-    codeDisplay.setAttribute('text', {value: currentInput.map(c => c || "_").join("  "), color: '#33ff33', align: 'center', width: 6});
-    codeDisplay.setAttribute('position', '0 0.5 0.05');
+    codeDisplay.setAttribute('text', {value: currentInput.map(c => c || "_").join("  "), color: '#33ff33', align: 'center', width: 3.6});
+    codeDisplay.setAttribute('position', '0 0.52 0.05');
     modal.appendChild(codeDisplay);
     
     // Feedback message
     const feedbackMsg = document.createElement('a-entity');
     feedbackMsg.setAttribute('id', 'vr-code-feedback');
-    feedbackMsg.setAttribute('text', {value: '', color: '#ff3333', align: 'center', width: 4});
-    feedbackMsg.setAttribute('position', '0 0.25 0.05');
+    feedbackMsg.setAttribute('text', {value: '', color: '#ff3333', align: 'center', width: 3.2});
+    feedbackMsg.setAttribute('position', '0 0.15 0.05');
     modal.appendChild(feedbackMsg);
 
     // Number buttons — show the found digits, but in a shuffled order
     const fragmentsNum = availableDigits.length;
-    const spacing = 0.55;
+    const spacing = fragmentsNum > 5 ? 0.52 : 0.6;
     const startX = -((fragmentsNum - 1) * spacing) / 2;
     
     availableDigits.forEach((frag, idx) => {
         const x = startX + idx * spacing;
         
         const btn = document.createElement('a-entity');
-        btn.setAttribute('geometry', 'primitive: box; width: 0.45; height: 0.45; depth: 0.05');
+        btn.setAttribute('geometry', 'primitive: box; width: 0.42; height: 0.42; depth: 0.05');
         btn.setAttribute('material', 'color: #1a1a2e; shader: flat');
-        btn.setAttribute('position', `${x} -0.15 0.05`);
+        btn.setAttribute('position', `${x} -0.28 0.05`);
         btn.setAttribute('class', 'clickable');
         
         // Large number text on the button
         const numText = document.createElement('a-entity');
-        numText.setAttribute('text', {value: String(frag.value), color: '#33ff33', align: 'center', width: 3});
+        numText.setAttribute('text', {value: String(frag.value), color: '#33ff33', align: 'center', width: 1.6});
         numText.setAttribute('position', '0 0 0.03');
         btn.appendChild(numText);
         
@@ -479,7 +485,7 @@ function openCodeModalVR() {
     });
     
     // Action Buttons Row
-    const btnY = -0.8;
+    const btnY = -0.95;
     
     // Submit
     const submitBtn = document.createElement('a-entity');
@@ -508,6 +514,7 @@ function openCodeModalVR() {
         AudioManager.playClick();
         currentInput = new Array(sceneData.finalCode.length).fill("");
         document.getElementById('vr-code-display').setAttribute('text', 'value', currentInput.map(c => c || "_").join("  "));
+        document.getElementById('vr-code-feedback').setAttribute('text', 'value', '');
     };
     clearBtn.addEventListener('mousedown', tryClear);
     clearBtn.addEventListener('click', tryClear);
@@ -515,7 +522,7 @@ function openCodeModalVR() {
 
     // Close
     const closeBtn = document.createElement('a-entity');
-    closeBtn.setAttribute('position', '1.5 1.2 0.05');
+    closeBtn.setAttribute('position', '1.7 1.35 0.05');
     closeBtn.setAttribute('geometry', 'primitive: box; width: 0.25; height: 0.25; depth: 0.05');
     closeBtn.setAttribute('material', 'color: #333; shader: flat');
     closeBtn.setAttribute('class', 'clickable');
@@ -526,7 +533,7 @@ function openCodeModalVR() {
     modal.appendChild(closeBtn);
 
     // Spawn in front of user
-    spawnInFrontOfCamera(modal, 2.5);
+    spawnInFrontOfCamera(modal, 3.6);
 }
 
 function submitCodeVR(sceneData) {
