@@ -260,12 +260,6 @@ function checkAllFragmentsFound() {
         hudCodeBtn.setAttribute('visible', 'true');
         hudCodeBtn.setAttribute('material', 'color', '#132813');
         hudCodeLabel.setAttribute('text', 'value', 'ENTER CODE');
-
-        if (!document.getElementById('active-vr-modal')) {
-            setTimeout(() => {
-                openCodeModalVR();
-            }, 250);
-        }
     }
 }
 
@@ -330,6 +324,9 @@ function spawnInFrontOfCamera(modalEl, targetDistance) {
 
 function showIntelModalVR(message, value) {
     destroyActiveModalVR();
+    const sceneId = GameState.currentSceneId;
+    const sceneData = SCENES[sceneId];
+    const allFragmentsFound = GameState.foundFragments[sceneId].size >= sceneData.totalFragments;
     
     // Create UI panel in world
     const modal = document.createElement('a-entity');
@@ -363,12 +360,17 @@ function showIntelModalVR(message, value) {
     btn.setAttribute('class', 'clickable');
     
     const btnText = document.createElement('a-entity');
-    btnText.setAttribute('text', {value: 'ACKNOWLEDGE', color: '#000', align: 'center', zOffset: 0.01, width: 4});
+    btnText.setAttribute('text', {value: allFragmentsFound ? 'ENTER CODE' : 'ACKNOWLEDGE', color: '#000', align: 'center', zOffset: 0.01, width: 4});
     btn.appendChild(btnText);
     
     btn.addEventListener('mousedown', () => {
         AudioManager.playClick();
         destroyActiveModalVR();
+        if (allFragmentsFound) {
+            setTimeout(() => {
+                openCodeModalVR();
+            }, 150);
+        }
     });
     
     // Hover
